@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>佐川町イベントカレンダー</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      min-height: 100vh;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
+    }
+
+    .header {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      color: black;
+      padding: 15px 30px;
+      text-align: center;
+      position: relative;
+    }
+
+    .header h1 {
+      font-size: 1.5rem;
+      margin-bottom: 15px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: flex-start;
+      margin-bottom: 5px;
+    }
+
+    .header-title {
+      text-align: center;
+    }
+
+    .header-speech {
+      position: absolute;
+      top: 15px;
+      right: 30px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .speech-label {
+      color: white;
+      font-size: 0.9rem;
+      font-weight: 300;
+      color: black;
+    }
+
+    .speech-btn {
+      background: rgba(28, 28, 28, 0.3);
+      border: 2px solid white;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      min-width: 40px;
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .speech-btn:hover {
+      background: rgba(28, 28, 28, 0.3);
+      transform: scale(1.1);
+    }
+
+    .speech-btn.speaking {
+      background: #aa4757;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.7;
+      }
+    }
+
+    .site-link {
+      font-size: 1.1rem;
+      color: rgba(255, 255, 255, 0.9);
+      text-decoration: none;
+      font-weight: 300;
+      transition: all 0.3s ease;
+    }
+
+    .site-link:hover {
+      color: white;
+      text-decoration: underline;
+    }
+
+    .controls-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: nowrap;
+    }
+
+    .view-toggle {
+      display: flex;
+      gap: 0;
+      background: rgba(30, 58, 138, 0.8);
+      border-radius: 25px;
+      padding: 3px;
+      backdrop-filter: blur(10px);
+    }
+
+    .toggle-btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 22px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: all 0.3s ease;
+      background: transparent;
+      color: white;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .toggle-btn.active {
+      background: white;
+      color: #4facfe;
+      box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
+    }
+
+    .month-nav {
+      display: flex;
+      align-items: center;
+      gap: 1px;
+    }
+
+    .month-nav button {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 20px;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    .month-nav button:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(1.1);
+    }
+
+    .current-month {
+      font-size: 1.2rem;
+      font-weight: 500;
+      min-width: 100px;
+      font-weight: bold;
+    }
+
+    .content {
+      padding: 30px;
+    }
+
+    /* Calendar Styles */
+    .calendar-view {
+      display: block;
+    }
+
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 2px;
+      background: #f0f0f0;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      width: 100%;
+    }
+
+    .calendar-header {
+      background: #F0F0F0;
+      color: #333;
+      padding: 20px 10px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 18px;
+    }
+
+    .calendar-header.saturday {
+      background: #ADD8E6;
+    }
+
+    .calendar-header.sunday {
+      background: #FFB6C1;
+    }
+
+    .calendar-day {
+      background: white;
+      min-height: 140px;
+      padding: 12px 8px;
+      position: relative;
+      transition: all 0.3s ease;
+      border-radius: 2px;
+    }
+
+    .calendar-day:hover {
+      background: #f8f9ff;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .calendar-day.other-month {
+      background: #f9f9f9;
+      color: #ccc;
+    }
+
+    .calendar-day.today {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      color: white;
+    }
+
+    .calendar-day.saturday {
+      background: #F0F8FF;
+    }
+
+    .calendar-day.sunday {
+      background: #FFF0F5;
+    }
+
+    .day-number {
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 18px;
+    }
+
+    .event-item {
+      color: white;
+      padding: 6px 8px;
+      margin: 3px 0;
+      border-radius: 8px;
+      font-size: 14px;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s ease;
+      overflow: hidden;
+      line-height: 1.2;
+    }
+
+    .event-item.library {
+      background: linear-gradient(45deg, #FFD700, #FFA500);
+    }
+
+    .event-item.tourism {
+      background: linear-gradient(45deg, #90EE90, #32CD32);
+    }
+
+    .event-item.museum {
+      background: linear-gradient(45deg, #FF8C00, #FF4500);
+    }
+
+    .event-item.sakuraza {
+      background: linear-gradient(45deg, #FFB6C1, #FF69B4);
+    }
+
+    .event-item.roadstation {
+      background: linear-gradient(45deg, #87CEEB, #4682B4);
+    }
+
+    .event-item.ochi {
+      background: linear-gradient(45deg, #DAA520, #B8860B);
+    }
+
+    .event-item.other {
+      background: linear-gradient(45deg, #A9A9A9, #696969);
+    }
+
+    .event-item:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+      text-decoration: none;
+    }
+
+    .event-title {
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .event-source {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.8);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* List Styles */
+    .list-view {
+      display: none;
+      position: relative;
+    }
+
+    .back-to-top {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #4facfe;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      font-size: 18px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+
+    .back-to-top:hover {
+      background: #667eea;
+      transform: translateY(-2px);
+    }
+
+    .list-view.active {
+      display: block;
+    }
+
+    .month-section {
+      margin-bottom: 40px;
+      background: #f8f9fa;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    }
+
+    .month-header {
+      background: #1E3A8A;
+      color: white;
+      padding: 25px 30px;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    .date-group {
+      border-bottom: 1px solid #e9ecef;
+    }
+
+    .date-group:last-child {
+      border-bottom: none;
+    }
+
+    .date-header {
+      background: linear-gradient(90deg, #e9ecef, #f8f9fa);
+      padding: 18px 30px;
+      font-weight: 600;
+      color: #495057;
+      font-size: 1.1rem;
+    }
+
+    .event-list-item {
+      padding: 20px 30px;
+      border-bottom: 1px solid #f1f3f4;
+      transition: all 0.3s ease;
+    }
+
+    .event-list-item:hover {
+      background: #f0f8ff;
+    }
+
+    .event-list-item:last-child {
+      border-bottom: none;
+    }
+
+    .event-list-item a {
+      color: #4facfe;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1.1rem;
+      transition: all 0.3s ease;
+    }
+
+    .event-list-item a:hover {
+      color: #667eea;
+      text-decoration: underline;
+    }
+
+    .event-content {
+      color: #666;
+      font-size: 0.95rem;
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 60px;
+      color: #666;
+      font-size: 1.2rem;
+    }
+
+    .loading::after {
+      content: '...';
+      animation: dots 1.5s infinite;
+    }
+
+    @keyframes dots {
+
+      0%,
+      20% {
+        content: '...';
+      }
+
+      40% {
+        content: '....';
+      }
+
+      60% {
+        content: '.....';
+      }
+
+      80%,
+      100% {
+        content: '......';
+      }
+    }
+
+    /* ポップアップ背景 */
+    .popup-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+    }
+
+    /* ポップアップ本体 */
+    .popup-content {
+      background: white;
+      padding: 10px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 90%;
+      /* height: 50%; */
+      position: relative;
+    }
+
+    /* 閉じるボタン */
+    .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    /* ？ボタン */
+    .help-btn {
+      margin-left: 1px;
+      background: #fff;
+      border: 2px solid #333;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .form-link {
+        display: inline-block;
+        padding: 10px 18px;
+        background: #4facfe;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: bold;
+        transition: background 0.3s ease;
+    }
+    .form-link:hover {
+        background: #667eea;
+    }
+
+    /* スマホ版の設定 */
+    @media (max-width: 768px) {
+      .header {
+        padding: 5px 0px;
+      }
+
+      .header h1 {
+        font-size: 1.3rem;
+        margin-bottom: 12px;
+      }
+
+      .controls-row {
+        gap: 5px;
+      }
+
+      .toggle-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+      }
+
+      .content {
+        padding: 5px;
+      }
+
+      .calendar {
+        font-size: 10px;
+        gap: 0.5px 0.5px;
+        background: #ccc;
+        margin: 0;
+      }
+
+      .calendar-header {
+        padding: 8px 2px;
+        font-size: 15px;
+        font-weight: 500;
+        background: #F0F0F0;
+        color: #333;
+      }
+
+      .calendar-header.saturday {
+        background: #ADD8E6;
+      }
+
+      .calendar-header.sunday {
+        background: #FFB6C1;
+      }
+
+      .calendar-day {
+        min-height: 85px;
+        padding: 2px 1px;
+        width: calc(100vw / 7 - 10px / 7);
+        max-width: calc(100vw / 7 - 10px / 7);
+      }
+
+      .day-number {
+        font-size: 14px;
+        margin-bottom: 4px;
+        font-weight: 600;
+      }
+
+      .event-item {
+        padding: 2px 3px;
+        margin: 1px 0;
+        font-size: 12px;
+        border-radius: 3px;
+      }
+
+      .event-title {
+        font-size: 12px;
+        line-height: 1.1;
+      }
+
+      .event-source {
+        font-size: 12px;
+        line-height: 1.3;
+      }
+
+      .current-month {
+        font-size: 1.2rem;
+        min-width: 80px;
+      }
+
+      .month-nav button {
+        padding: 6px 10px;
+        font-size: 25px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-top">
+        <a href="https://www.molingit.com/" class="site-link">← molingit.com</a>
+      </div>
+      <h1 class="header-title">
+        佐川町イベント
+        <button id="helpBtn" class="help-btn">？</button>
+      </h1>
+      <div class="header-speech">
+        <span class="speech-label">音声</span>
+        <button class="speech-btn" id="speechBtn" onclick="toggleSpeech()">▶</button>
+      </div>
+
+      <div class="controls-row">
+        <div class="view-toggle">
+          <button class="toggle-btn active" onclick="showCalendar()">カレンダー</button>
+          <button class="toggle-btn" onclick="showList()">リスト</button>
+        </div>
+
+        <div class="month-nav">
+          <button onclick="changeMonth(-1)"><b>
+              < </b> </button> <span class="current-month" id="currentMonth"></span>
+                <button onclick="changeMonth(1)"><b> > </b></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+      <div id="calendar-view" class="calendar-view">
+        <div class="loading" id="loading">イベント情報を読み込み中</div>
+        <div id="calendar" class="calendar" style="display: none;"></div>
+      </div>
+
+      <div id="list-view" class="list-view">
+        <div id="eventList"></div>
+        <button class="back-to-top" onclick="scrollToTop()" style="display: none;">↑</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 使い方ポップアップ -->
+  <div id="helpPopup" class="popup-overlay">
+    <div class="popup-content">
+      <span id="closePopup" class="close-btn">&times;</span>
+      <h3>使い方</h3>
+      ・「カレンダー」ボタンで月表示<br>
+      ・「リスト」ボタンで一覧表示<br>
+      ・イベントをクリックすると詳細ページへ移動<br>
+      ・右上の▶︎ボタンで音声案内<br>
+      ・毎月1日ごろに更新<br>
+<br>
+      <h3>イベント掲載申込</h3>
+<p>
+   下記のリンクからGoogleフォームにアクセスしてください。<br>
+   <a href="https://docs.google.com/forms/d/e/1FAIpQLScjHxtlE42Dg1vx1moyuw5bz14Iwxh4lk-xeGGB6pOn9eOM7A/viewform?usp=header"
+      target="_blank"
+      class="form-link">
+      👉 Googleフォームを開く
+   </a></p>
+<br>
+<h3>カレンダー制作</h3>
+大村暢 / OMURA MITSURU<br>
+地域おこし協力隊 / さかわ発明ラボ
+<br>
+<br>
+    </div>
+  </div>
+
+  <script>
+    let currentDate = new Date();
+    let events = [];
+    let currentView = 'calendar';
+
+    // 音声再生用の新しい変数
+    let speechSegments = [];
+    let currentSegmentIndex = 0;
+    let isSpeaking = false;
+    let isPaused = false;
+
+    async function loadEventsFromJSON() {
+      try {
+        // まずメインのイベント
+        const response = await fetch('sakawa_events.json');
+        if (!response.ok) {
+          throw new Error(`HTTPエラー: ${response.status}`);
+        }
+        events = await response.json();
+
+        // manual_events.json を追加で読み込み（存在しない場合は無視）
+        try {
+          const manualResponse = await fetch('manual_events.json');
+          if (manualResponse.ok) {
+            const manualEvents = await manualResponse.json();
+            events = events.concat(manualEvents);
+          }
+        } catch (err) {
+          console.warn("manual_events.json は存在しません。スキップします。");
+        }
+
+        // ochi_events.json を追加で読み込み（存在しない場合は無視）
+        try {
+          const ochiResponse = await fetch('ochi_events.json');
+          if (ochiResponse.ok) {
+            const ochiEvents = await ochiResponse.json();
+            events = events.concat(ochiEvents);
+          }
+        } catch (err) {
+          console.warn("ochi_events.json は存在しません。スキップします。");
+        }
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('calendar').style.display = 'grid';
+
+        renderCalendar();
+        renderList();
+      } catch (error) {
+        console.error('JSONファイルの読み込みに失敗しました:', error);
+        document.getElementById('loading').innerHTML =
+          'JSONファイル (sakawa_events.json) の読み込みに失敗しました。<br>ファイルが存在することを確認してください。';
+      }
+    }
+
+    function showCalendar() {
+      currentView = 'calendar';
+      document.getElementById('calendar-view').style.display = 'block';
+      document.getElementById('list-view').style.display = 'none';
+      document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.toggle-btn')[0].classList.add('active');
+
+      const backToTopBtn = document.querySelector('.back-to-top');
+      backToTopBtn.style.display = 'none';
+    }
+
+    function showList() {
+      currentView = 'list';
+      document.getElementById('calendar-view').style.display = 'none';
+      document.getElementById('list-view').style.display = 'block';
+      document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.toggle-btn')[1].classList.add('active');
+
+      setTimeout(() => {
+        scrollToCurrentMonth();
+        showBackToTopButton();
+      }, 100);
+    }
+
+    function scrollToCurrentMonth() {
+      const currentYear = currentDate.getFullYear();
+      const currentMonth = currentDate.getMonth() + 1;
+      const monthKey = `${currentYear}年${currentMonth}月`;
+
+      const monthHeaders = document.querySelectorAll('.month-header');
+      monthHeaders.forEach(header => {
+        if (header.textContent === monthKey) {
+          header.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      });
+    }
+
+    function showBackToTopButton() {
+      const backToTopBtn = document.querySelector('.back-to-top');
+      backToTopBtn.style.display = 'block';
+    }
+
+    function scrollToTop() {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+
+    function changeMonth(direction) {
+      console.log(`=== 月変更: ${direction > 0 ? '次月' : '前月'} ===`);
+      currentDate.setMonth(currentDate.getMonth() + direction);
+      renderCalendar();
+      // 月が変わったときは音声を停止して新しいテキストを準備
+      console.log('月変更により音声停止とリセット');
+      stopSpeech();
+      isPaused = false; // 月が変わったら一時停止状態も解除
+      currentSegmentIndex = 0; // 位置もリセット
+      prepareSpeechSegments();
+    }
+
+    function renderCalendar() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+
+      document.getElementById('currentMonth').textContent =
+        `${year}年${month + 1}月`;
+
+      // 音声用セグメントを準備
+      prepareSpeechSegments();
+
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const startDate = new Date(firstDay);
+      const dayOfWeek = (firstDay.getDay() + 6) % 7;
+      startDate.setDate(startDate.getDate() - dayOfWeek);
+
+      const calendar = document.getElementById('calendar');
+      calendar.innerHTML = '';
+
+      // Headers
+      const weekdays = ['月', '火', '水', '木', '金', '土', '日'];
+      weekdays.forEach((day, index) => {
+        const header = document.createElement('div');
+        header.className = 'calendar-header';
+        header.textContent = day;
+
+        if (index === 5) {
+          header.classList.add('saturday');
+        } else if (index === 6) {
+          header.classList.add('sunday');
+        }
+
+        calendar.appendChild(header);
+      });
+
+      // Days
+      const today = new Date();
+      for (let i = 0; i < 42; i++) {
+        const cellDate = new Date(startDate);
+        cellDate.setDate(startDate.getDate() + i);
+
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'calendar-day';
+
+        if (cellDate.getMonth() !== month) {
+          dayDiv.classList.add('other-month');
+        }
+
+        if (cellDate.toDateString() === today.toDateString()) {
+          dayDiv.classList.add('today');
+        }
+
+        const dayOfWeek = cellDate.getDay();
+        if (dayOfWeek === 6) {
+          dayDiv.classList.add('saturday');
+        } else if (dayOfWeek === 0) {
+          dayDiv.classList.add('sunday');
+        }
+
+        const dayNumber = document.createElement('div');
+        dayNumber.className = 'day-number';
+        dayNumber.textContent = cellDate.getDate();
+        dayDiv.appendChild(dayNumber);
+
+        const dayEvents = getEventsForDate(cellDate);
+        dayEvents.forEach(event => {
+          const eventDiv = document.createElement('a');
+          eventDiv.className = 'event-item';
+          eventDiv.href = event.url || '#';
+          eventDiv.target = '_blank';
+
+          if (event.source) {
+            const source = event.source.toLowerCase();
+            if (source.includes('図書館')) {
+              eventDiv.classList.add('library');
+            } else if (source.includes('観光協会') && !source.includes('越知町')) {
+              eventDiv.classList.add('tourism');
+            } else if (source.includes('美術館')) {
+              eventDiv.classList.add('museum');
+            } else if (source.includes('桜座')) {
+              eventDiv.classList.add('sakuraza');
+            } else if (source.includes('道の駅')) {
+              eventDiv.classList.add('roadstation');
+            } else if (source.includes('越知町観光協会')) {
+              eventDiv.classList.add('ochi');
+            } else {
+              eventDiv.classList.add('other');
+            }
+          } else {
+            eventDiv.classList.add('other');
+          }
+
+          const titleDiv = document.createElement('div');
+          titleDiv.className = 'event-title';
+          titleDiv.textContent = event.title;
+          eventDiv.appendChild(titleDiv);
+
+          if (event.source) {
+            const sourceDiv = document.createElement('div');
+            sourceDiv.className = 'event-source';
+            sourceDiv.textContent = `[${event.source}]`;
+            eventDiv.appendChild(sourceDiv);
+          }
+
+          dayDiv.appendChild(eventDiv);
+        });
+
+        calendar.appendChild(dayDiv);
+      }
+    }
+
+    // スワイプ判定用
+    let touchStartX = 0;
+
+    const calendarEl = document.getElementById("calendar");
+
+    calendarEl.addEventListener("touchstart", (e) => {
+      touchStartX = e.changedTouches[0].clientX;
+    });
+
+    calendarEl.addEventListener("touchend", (e) => {
+      const touchEndX = e.changedTouches[0].clientX;
+      handleSwipe(touchEndX - touchStartX);
+    });
+
+    function handleSwipe(diffX) {
+      if (Math.abs(diffX) > 50) {
+        if (diffX > 0) {
+          currentDate.setMonth(currentDate.getMonth() - 1);
+        } else {
+          currentDate.setMonth(currentDate.getMonth() + 1);
+        }
+        renderCalendar();
+      }
+    }
+
+    function renderList() {
+      const eventList = document.getElementById('eventList');
+      eventList.innerHTML = '';
+
+      const eventsByMonth = {};
+      events.forEach(event => {
+        if (!event.year || !event.month) {
+          console.warn('Invalid event data:', event);
+          return;
+        }
+
+        const key = `${event.year}-${event.month.toString().padStart(2, '0')}`;
+        if (!eventsByMonth[key]) eventsByMonth[key] = {};
+
+        if (event.dates && Array.isArray(event.dates)) {
+          event.dates.forEach(date => {
+            if (date != null) {
+              const dayKey = date.toString();
+              if (!eventsByMonth[key][dayKey]) eventsByMonth[key][dayKey] = [];
+              eventsByMonth[key][dayKey].push(event);
+            }
+          });
+        } else if (event.day != null) {
+          const dayKey = event.day.toString();
+          if (!eventsByMonth[key][dayKey]) eventsByMonth[key][dayKey] = [];
+          eventsByMonth[key][dayKey].push(event);
+        }
+      });
+
+      const sortedMonths = Object.keys(eventsByMonth).sort();
+
+      sortedMonths.forEach(monthKey => {
+        const [year, month] = monthKey.split('-');
+        const monthSection = document.createElement('div');
+        monthSection.className = 'month-section';
+
+        const monthHeader = document.createElement('div');
+        monthHeader.className = 'month-header';
+        monthHeader.textContent = `${year}年${parseInt(month)}月`;
+        monthSection.appendChild(monthHeader);
+
+        const sortedDays = Object.keys(eventsByMonth[monthKey]).sort((a, b) => parseInt(a) - parseInt(b));
+
+        sortedDays.forEach(day => {
+          const dateGroup = document.createElement('div');
+          dateGroup.className = 'date-group';
+
+          const dateHeader = document.createElement('div');
+          dateHeader.className = 'date-header';
+          // dateHeader.textContent = `${parseInt(month)}/${parseInt(day)}日`;
+          // 曜日名リスト
+          const weekdayNames = ['日', '月', '火', '水', '木', '金', '土'];
+
+          // 日付を Date オブジェクトに変換
+          const dateObj = new Date(year, parseInt(month) - 1, parseInt(day));
+          const weekday = weekdayNames[dateObj.getDay()];
+
+          // 9月6日（土）形式で表示
+          dateHeader.textContent = `${parseInt(month)}月${parseInt(day)}日（${weekday}）`;
+
+
+          dateGroup.appendChild(dateHeader);
+
+          eventsByMonth[monthKey][day].forEach(event => {
+            const eventItem = document.createElement('div');
+            eventItem.className = 'event-list-item';
+
+            const eventLink = document.createElement('a');
+            eventLink.href = event.url || '#';
+
+            let displayText = event.title || 'タイトルなし';
+            if (event.source) {
+              displayText += ` [${event.source}]`;
+            }
+            eventLink.textContent = displayText;
+
+            eventLink.target = '_blank';
+            eventItem.appendChild(eventLink);
+
+            if (event.content) {
+              const eventContent = document.createElement('div');
+              eventContent.className = 'event-content';
+              eventContent.textContent = event.content.replace(/\\n/g, ' ');
+              eventItem.appendChild(eventContent);
+            }
+
+            dateGroup.appendChild(eventItem);
+          });
+
+          monthSection.appendChild(dateGroup);
+        });
+
+        eventList.appendChild(monthSection);
+      });
+    }
+
+    function getEventsForDate(date) {
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1;
+      const day = date.getDate();
+
+      return events.filter(event => {
+        if (event.year === year && event.month === month) {
+          if (event.dates && Array.isArray(event.dates)) {
+            return event.dates.some(d => d != null && parseInt(d) === day);
+          } else if (event.day != null) {
+            return event.day === day;
+          }
+        }
+        return false;
+      });
+    }
+
+    // 新しい音声機能：セグメント単位での管理
+    function prepareSpeechSegments() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth() + 1;
+
+      console.log(`=== prepareSpeechSegments開始: ${year}年${month}月 ===`);
+      console.log(`isPaused: ${isPaused}, currentSegmentIndex: ${currentSegmentIndex}`);
+
+      const monthEvents = events.filter(event => {
+        return event.year === year && event.month === month;
+      });
+
+      if (monthEvents.length === 0) {
+        speechSegments = [`${year}年${month}月にはイベントがありません。`];
+        if (!isPaused) {
+          currentSegmentIndex = 0;
+        }
+        console.log(`イベントなし。セグメント数: ${speechSegments.length}, currentSegmentIndex: ${currentSegmentIndex}`);
+        return;
+      }
+
+      const sortedEvents = [];
+      monthEvents.forEach(event => {
+        if (event.dates && Array.isArray(event.dates)) {
+          event.dates.forEach(date => {
+            if (date != null) {
+              sortedEvents.push({
+                date: parseInt(date),
+                title: event.title,
+                source: event.source || ''
+              });
+            }
+          });
+        } else if (event.day != null) {
+          sortedEvents.push({
+            date: event.day,
+            title: event.title,
+            source: event.source || ''
+          });
+        }
+      });
+
+      sortedEvents.sort((a, b) => a.date - b.date);
+
+      const weekdayNames = ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'];
+
+      // セグメントを作成：最初に導入、その後各イベントを個別のセグメントに
+      speechSegments = [];
+      speechSegments.push(`${year}年${month}月のイベントをお知らせします。`);
+
+      sortedEvents.forEach(event => {
+        const sourceText = event.source ? `、${event.source}です` : '';
+        const dateObj = new Date(year, month - 1, event.date);
+        const weekday = weekdayNames[dateObj.getDay()];
+
+        // 音声用に読み方を調整（タイトルとソース両方）
+        const speechTitle = event.title
+          .replace(/道の駅/g, 'みちのえき')
+          .replace(/鯨坂八幡宮/g, 'くじらざかはちまんぐう');
+
+        const speechSourceText = sourceText
+          .replace(/道の駅/g, 'みちのえき')
+
+        speechSegments.push(`${month}月${event.date}日${weekday}、${speechTitle}${speechSourceText}。`);
+      });
+
+      // 停止中でない場合はリセット
+      if (!isPaused) {
+        currentSegmentIndex = 0;
+        console.log('一時停止中ではないため、currentSegmentIndexを0にリセット');
+      }
+
+      console.log(`セグメント準備完了:`);
+      speechSegments.forEach((segment, index) => {
+        console.log(`  [${index}] ${segment}`);
+      });
+      console.log(`総セグメント数: ${speechSegments.length}, 開始予定位置: ${currentSegmentIndex}`);
+    }
+
+    function playNextSegment() {
+      console.log(`=== playNextSegment呼び出し ===`);
+      console.log(`currentSegmentIndex: ${currentSegmentIndex}, 総セグメント数: ${speechSegments.length}`);
+
+      if (currentSegmentIndex >= speechSegments.length) {
+        console.log('全セグメント再生完了');
+        finishSpeech();
+        return;
+      }
+
+      const segmentText = speechSegments[currentSegmentIndex];
+      console.log(`再生開始 [${currentSegmentIndex}]: "${segmentText}"`);
+
+      const utterance = new SpeechSynthesisUtterance(segmentText);
+      utterance.lang = 'ja-JP';
+      utterance.rate = 0.9;
+      utterance.pitch = 1.0;
+
+      // 日本語音声を強制的に選択　2025/09/24
+      const voices = speechSynthesis.getVoices();
+      const japaneseVoice = voices.find(voice =>
+        voice.lang === 'ja-JP' ||
+        voice.lang.startsWith('ja') ||
+        voice.name.includes('Japanese') ||
+        voice.name.includes('日本')
+      );
+      if (japaneseVoice) {
+        utterance.voice = japaneseVoice;
+      }
+
+
+      utterance.onend = () => {
+        console.log(`セグメント[${currentSegmentIndex}]再生完了`);
+        if (isSpeaking) {
+          currentSegmentIndex++;
+          console.log(`次のセグメントへ移動: ${currentSegmentIndex}`);
+          // 少し間を置いて次のセグメントを再生
+          setTimeout(() => {
+            if (isSpeaking) {
+              playNextSegment();
+            }
+          }, 300);
+        }
+      };
+
+      utterance.onerror = () => {
+        console.log('音声再生エラー（一時停止による中断の可能性）');
+        // 一時停止中でない場合のみfinishSpeechを呼ぶ
+        if (!isPaused) {
+          console.log('エラーによる終了処理');
+          finishSpeech();
+        } else {
+          console.log('一時停止中のためエラーを無視');
+        }
+      };
+
+      speechSynthesis.speak(utterance);
+    }
+
+    function toggleSpeech() {
+      const speechBtn = document.getElementById('speechBtn');
+      console.log(`=== toggleSpeech呼び出し ===`);
+      console.log(`現在の状態 - isSpeaking: ${isSpeaking}, isPaused: ${isPaused}, currentSegmentIndex: ${currentSegmentIndex}`);
+
+      if (isSpeaking) {
+        // 停止（一時停止として機能）
+        console.log('音声停止（一時停止）');
+        stopSpeech();
+        isPaused = true;
+        speechBtn.textContent = '▶';
+        speechBtn.classList.remove('speaking');
+        console.log(`停止後の状態 - isPaused: ${isPaused}, currentSegmentIndex: ${currentSegmentIndex}`);
+      } else {
+        // 再生開始または再開
+        console.log(`再生開始/再開 - isPaused: ${isPaused}`);
+
+        // セグメントが空の場合、または一時停止中でない場合のみ準備
+        if (speechSegments.length === 0 || !isPaused) {
+          console.log('セグメント準備が必要');
+          prepareSpeechSegments();
+        }
+
+        isSpeaking = true;
+        // isPausedをfalseにするのは、prepareSpeechSegments後に行う
+        isPaused = false;
+        speechBtn.textContent = '■';
+        speechBtn.classList.add('speaking');
+
+        console.log(`再生開始位置: セグメント[${currentSegmentIndex}]`);
+        playNextSegment();
+      }
+    }
+
+    function stopSpeech() {
+      speechSynthesis.cancel();
+      isSpeaking = false;
+    }
+
+    function finishSpeech() {
+      const speechBtn = document.getElementById('speechBtn');
+      console.log('=== 音声再生完了 ===');
+      isSpeaking = false;
+      isPaused = false;
+      currentSegmentIndex = 0;
+      speechBtn.classList.remove('speaking');
+      speechBtn.textContent = '▶';
+      console.log('状態リセット完了');
+    }
+
+    // ページ読み込み時にイベントデータを自動読み込み
+    document.addEventListener('DOMContentLoaded', function() {
+      loadEventsFromJSON();
+    });
+
+
+    // ポップアップ制御
+    document.addEventListener('DOMContentLoaded', () => {
+      const helpBtn = document.getElementById('helpBtn');
+      const helpPopup = document.getElementById('helpPopup');
+      const closePopup = document.getElementById('closePopup');
+
+      // 開く
+      helpBtn.addEventListener('click', () => {
+        helpPopup.style.display = 'flex';
+      });
+
+      // 閉じる（バツ印）
+      closePopup.addEventListener('click', () => {
+        helpPopup.style.display = 'none';
+      });
+
+      // 背景クリックで閉じる
+      helpPopup.addEventListener('click', (e) => {
+        if (e.target === helpPopup) {
+          helpPopup.style.display = 'none';
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>
