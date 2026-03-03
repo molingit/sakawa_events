@@ -1,1 +1,32 @@
+name: Monthly Event Scraper
 
+on:
+  schedule:
+    - cron: '0 1 1 * *'
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+
+      - name: Python 3.11 をセットアップ
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 依存パッケージをインストール
+        run: pip install -r requirements.txt
+
+      - name: スクレイパーを実行
+        run: python main.py
+
+      - name: 結果をコミット＆プッシュ
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add sakawa_events.json
+          git diff --cached --quiet || git commit -m "chore: update events $(date +'%Y-%m')"
+          git push
