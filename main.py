@@ -11,12 +11,17 @@
 import requests
 from bs4 import BeautifulSoup
 from icalendar import Calendar
+import recurring_ical_events
 import json
 import os
+import glob
 import re
-from datetime import datetime
+from datetime import datetime, date
 
 JSON_FILE = "sakawa_events.json"
+
+# 過去年のイベントを年ごとに保存するフォルダ
+ARCHIVE_DIR = "archive"
 
 # 外部から読み込む追加JSONファイル
 EXTRA_JSON_FILES = [
@@ -57,8 +62,58 @@ def load_json(path):
     return []
 
 
+def load_saved_events():
+    """保存済みイベントを全て読み込む（メイン + archive/ 内の年別ファイル）
+
+    アーカイブ済みのイベントも読み込むことで、
+    過去年のイベントが毎回スクレイパーから再追加されるのを防ぐ。
+    """
+    events = load_json(JSON_FILE)
+    for path in sorted(glob.glob(os.path.join(ARCHIVE_DIR, "*.json"))):
+        events.extend(load_json(path))
+    return events
+
+
+def save_events(all_events):
+    """開催年で振り分けて保存する
+
+    今年以降 → sakawa_events.json（表示用）
+    過去年   → archive/{年}.json
+    year が無いものは振り分け先が決まらないため sakawa_events.json に残す
+    """
+    current_year = datetime.now().year
+    main_events = []
+    by_year = {}
+
+    for e in all_events:
+        y = e.get("year")
+        if isinstance(y, int) and y < current_year:
+            by_year.setdefault(y, []).append(e)
+        else:
+            main_events.append(e)
+
+    with open(JSON_FILE, "w", encoding="utf-8") as f:
+        json.dump(main_events, f, ensure_ascii=False, indent=2)
+    print(f"保存先: {JSON_FILE} ({len(main_events)} 件)")
+
+    if by_year:
+        os.makedirs(ARCHIVE_DIR, exist_ok=True)
+        for y in sorted(by_year):
+            path = os.path.join(ARCHIVE_DIR, f"{y}.json")
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(by_year[y], f, ensure_ascii=False, indent=2)
+            print(f"保存先: {path} ({len(by_year[y])} 件)")
+
+
 def event_key(e):
-    """重複チェック用キー: URLとタイトルの組み合わせ"""
+    """重複チェック用キー
+
+    uid があればそれを使う（おもちゃ美術館。カレンダー側が発行する識別子）
+    無ければ URLとタイトルの組み合わせ
+    """
+    uid = e.get("uid")
+    if uid:
+        return ("uid", uid)
     return (e.get("url", ""), e.get("title", ""))
 
 
@@ -174,6 +229,11 @@ def scrape_toymuseum():
     def make_ical_url(calendar_id):
         return f"https://calendar.google.com/calendar/ical/{calendar_id.replace('@', '%40')}/public/basic.ics"
 
+    # 繰り返しイベントを展開する期間（前年1月1日 〜 翌年12月31日）
+    this_year = datetime.now().year
+    span_start = date(this_year - 1, 1, 1)
+    span_end = date(this_year + 1, 12, 31)
+
     new_events = []
 
     for calendar_id in CALENDAR_IDS:
@@ -186,7 +246,15 @@ def scrape_toymuseum():
             print(f"    ⚠ カレンダー取得失敗: {calendar_id} {e}")
             continue
 
-        for component in cal.walk():
+        # 繰り返し設定（毎週など）を1回ずつに展開する。
+        # 展開に失敗した場合は、従来通り VEVENT をそのまま読む。
+        try:
+            components = recurring_ical_events.of(cal).between(span_start, span_end)
+        except Exception as e:
+            print(f"    ⚠ 繰り返しの展開に失敗: {calendar_id} {e}")
+            components = [c for c in cal.walk() if c.name == "VEVENT"]
+
+        for component in components:
             if component.name != "VEVENT":
                 continue
             dtstart = component.get("DTSTART")
@@ -200,15 +268,21 @@ def scrape_toymuseum():
             if location:
                 content = f"場所: {location}\n{content}"
 
-            # 除外チェック
-            if any(kw in title + content for kw in EXCLUDE_KEYWORDS):
+            # 除外チェック（タイトルのみを対象とする）
+            if any(kw in title for kw in EXCLUDE_KEYWORDS):
                 continue
+
+            # 重複判定用の識別子。
+            # 繰り返しイベントは全ての回が同じUIDになるため、その回の日付を付ける。
+            uid = str(component.get("UID", ""))
+            occurrence_uid = f"{uid}#{dt.year:04d}-{dt.month:02d}-{dt.day:02d}" if uid else ""
 
             new_events.append({
                 "title": title,
                 "content": content.strip(),
                 "site": SITE_NAME,
                 "url": "https://sakawa-toymuseum.info",
+                "uid": occurrence_uid,
                 "year": dt.year,
                 "month": dt.month,
                 "day": dt.day,
@@ -339,17 +413,22 @@ SCRAPERS = [
 # ============================================================
 
 def main():
-    # --- 外部JSONファイルを読み込む ---
-    all_events = []
-    for path in EXTRA_JSON_FILES:
-        all_events.extend(load_json(path))
-
-    # --- 既存の sakawa_events.json を読み込む ---
-    existing = load_json(JSON_FILE)
-    all_events.extend(existing)
+    # --- 保存済みイベントを読み込む（メイン + アーカイブ） ---
+    all_events = load_saved_events()
 
     # 既存キーセットを構築
     existing_keys = {event_key(e) for e in all_events}
+
+    # --- 外部JSONファイルを読み込む（既に入っているものは追加しない） ---
+    for path in EXTRA_JSON_FILES:
+        added = 0
+        for ev in load_json(path):
+            k = event_key(ev)
+            if k not in existing_keys:
+                all_events.append(ev)
+                existing_keys.add(k)
+                added += 1
+        print(f"  → {added} 件追加")
 
     total_added = 0
 
@@ -362,6 +441,10 @@ def main():
             print(f"  ⚠ {name} 全体エラー: {e}")
             continue
 
+        # 取得件数0はサイト構造の変更を疑う（黙って漏れるのを防ぐ）
+        if not new_events:
+            print(f"  ⚠ {name} の取得件数が0件です。サイトの構造が変わった可能性があります")
+
         added = 0
         for ev in new_events:
             k = event_key(ev)
@@ -373,14 +456,12 @@ def main():
         print(f"  → {added} 件追加（取得総数: {len(new_events)} 件）")
         total_added += added
 
-    # --- JSON保存 ---
-    with open(JSON_FILE, "w", encoding="utf-8") as f:
-        json.dump(all_events, f, ensure_ascii=False, indent=2)
+    # --- JSON保存（開催年で振り分け） ---
+    save_events(all_events)
 
     print(f"\n=== 完了 ===")
     print(f"新規追加合計: {total_added} 件")
     print(f"総イベント数: {len(all_events)} 件")
-    print(f"保存先: {JSON_FILE}")
 
 
 if __name__ == "__main__":
