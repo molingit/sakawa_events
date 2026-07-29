@@ -106,13 +106,16 @@ def save_events(all_events):
 
 
 def content_key(e):
-    """内容による重複判定用キー: タイトル・開催日・内容"""
+    """内容による重複判定用キー: タイトル・開催日
+
+    説明文はカレンダーごとに微妙に異なることがあるため判定に使わない。
+    同じタイトルのイベントが同じ日に2件あれば、同一とみなす。
+    """
     return (
         e.get("title", ""),
         e.get("year"),
         e.get("month"),
         e.get("day"),
-        (e.get("content") or "").strip(),
     )
 
 
