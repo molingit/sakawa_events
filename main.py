@@ -105,6 +105,39 @@ def save_events(all_events):
             print(f"保存先: {path} ({len(by_year[y])} 件)")
 
 
+def content_key(e):
+    """内容による重複判定用キー: タイトル・開催日・内容"""
+    return (
+        e.get("title", ""),
+        e.get("year"),
+        e.get("month"),
+        e.get("day"),
+        (e.get("content") or "").strip(),
+    )
+
+
+def dedupe_events(events):
+    """タイトル・開催日・内容が全て同じイベントを1件にまとめる
+
+    おもちゃ美術館は複数のカレンダーを読んでいるため、
+    同じイベントが別々のUIDで重複して入ることがある。
+    先に入っていたものを残す。
+    """
+    seen = set()
+    result = []
+    removed = 0
+    for e in events:
+        k = content_key(e)
+        if k in seen:
+            removed += 1
+            continue
+        seen.add(k)
+        result.append(e)
+    if removed:
+        print(f"重複を除外: {removed} 件")
+    return result
+
+
 def event_key(e):
     """重複チェック用キー
 
@@ -455,6 +488,9 @@ def main():
 
         print(f"  → {added} 件追加（取得総数: {len(new_events)} 件）")
         total_added += added
+
+    # --- 重複除外（タイトル・開催日・内容が同じもの） ---
+    all_events = dedupe_events(all_events)
 
     # --- JSON保存（開催年で振り分け） ---
     save_events(all_events)
